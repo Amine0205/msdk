@@ -2,12 +2,34 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; // set in .env.local (server-only)
-
-const supabaseAdmin = createClient(url, serviceKey);
-
 export async function POST(req: Request) {
+  // move server-only client creation inside the handler and validate env
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // server-only
+  if (!url || !serviceKey) {
+    console.error('Missing Supabase server env vars', { url: !!url, serviceKey: !!serviceKey });
+    return NextResponse.json({ success: false, error: 'Server misconfiguration' }, { status: 500 });
+  }
+
+  const supabaseAdmin = createClient(url, serviceKey, {
+    auth: { persistSession: false },
+  });
+
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminEmailPass = process.env.ADMIN_EMAIL_PASSWORD;
+  if (!adminEmail || !adminEmailPass) {
+    console.error('Missing admin email env vars', { adminEmail: !!adminEmail, adminEmailPass: !!adminEmailPass });
+    return NextResponse.json({ success: false, error: 'Email not configured' }, { status: 500 });
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: adminEmail,
+      pass: adminEmailPass,
+    },
+  });
+
   try {
     const data = await req.json();
     const { full_name, phone, email, address, city, notes, products, total } = data;
@@ -45,14 +67,6 @@ export async function POST(req: Request) {
     }
 
     try {
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.ADMIN_EMAIL,
-          pass: process.env.ADMIN_EMAIL_PASSWORD,
-        },
-      });
-
       const productsHtml = products
         .map(
           (p: any) =>
