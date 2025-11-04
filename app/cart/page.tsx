@@ -121,13 +121,12 @@ export default function CartPage() {
               </div>
             </div>
 
-            <Link href="/checkout"
-              // onClick={() => router.push('/checkout')}
-              // size="lg"
-              className="w-full bg-orange-600 hover:bg-orange-700"
+            <button 
+              onClick={() => router.push('/checkout')}
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300"
             >
               Proceed to Checkout
-            </Link>
+            </button>
 
             <p className="text-xs text-center text-slate-600 mt-4">
               Cash on Delivery available

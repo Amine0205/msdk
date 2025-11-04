@@ -29,24 +29,19 @@ export default function AboutPage() {
 
   const team = [
     {
-      name: 'Amira Hassan',
-      role: 'Founder & CEO',
-      bio: 'Passionate about connecting Moroccan culture with the world',
+      name: 'Amine',
+      role: 'Co-Founder & CEO',
+      bio: 'Passionate about connecting Moroccan culture around the country',
+    }, 
+    {
+      name: 'Ray',
+      role: 'Co-Founder & CTO',
+      bio: 'Dedicated to sourcing the finest authentic Moroccan products',
     },
     {
-      name: 'Mohamed El-Karim',
-      role: 'Supply Chain Manager',
-      bio: 'Ensures quality and authenticity of every product',
-    },
-    {
-      name: 'Fatima Bennani',
-      role: 'Customer Experience Lead',
-      bio: 'Dedicated to making your shopping experience exceptional',
-    },
-    {
-      name: 'Karim Boutabia',
-      role: 'Tech Lead',
-      bio: 'Building the best e-commerce platform for Moroccan goods',
+      name: 'Marty',
+      role: 'Head of Marketing',
+      bio: 'Dedicated to promoting authentic Moroccan products and culture worldwide',
     },
   ];
 
@@ -102,7 +97,7 @@ export default function AboutPage() {
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-slate-900 mb-12 text-center">Our Team</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center">
             {team.map((member) => (
               <div key={member.name} className="text-center">
                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-orange-400 to-red-500 mx-auto mb-4"></div>
