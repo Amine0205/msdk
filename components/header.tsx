@@ -13,7 +13,7 @@ export function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2">
           <Store className="h-6 w-6 text-orange-600" />
-          <span className="text-2xl font-bold text-slate-900">MSDK</span>
+          <span className="text-2xl font-bold text-slate-900">MDSK</span>
         </Link>
 
         <nav className="hidden md:flex items-center space-x-6">
@@ -22,6 +22,15 @@ export function Header() {
           </Link>
           <Link href="/products" className="text-sm font-medium text-slate-700 hover:text-orange-600 transition-colors">
             Products
+          </Link>
+          <Link href="/about" className="text-sm font-medium text-slate-700 hover:text-orange-600 transition-colors">
+            About
+          </Link>
+          <Link href="/faq" className="text-sm font-medium text-slate-700 hover:text-orange-600 transition-colors">
+            FAQ
+          </Link>
+          <Link href="/contact" className="text-sm font-medium text-slate-700 hover:text-orange-600 transition-colors">
+            Contact
           </Link>
         </nav>
 

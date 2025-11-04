@@ -1,8 +1,10 @@
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Package, Truck, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Package, ShieldCheck, Truck } from 'lucide-react';
+import Link from 'next/link';
+import BestSellers from './components/BestSellers';
+import NewIn from './components/NewIn';
 
-export default function Home() {
+export default async function Home() {
   const categories = [
     {
       name: 'Fashion',
@@ -46,6 +48,7 @@ export default function Home() {
 
   return (
     <div>
+      {/* Hero section */}
       <section className="relative bg-gradient-to-br from-orange-50 via-white to-amber-50 py-20 md:py-32">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
@@ -68,6 +71,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmOTczMTYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE0YzMuMzEgMCA2LTIuNjkgNi02cy0yLjY5LTYtNi02LTYgMi42OS02IDYgMi42OSA2IDYgNnptLTI0IDBjMy4zMSAwIDYtMi42OSA2LTZzLTIuNjktNi02LTYtNiAyLjY5LTYgNiAyLjY5IDYgNiA2em0wIDI0YzMuMzEgMCA2LTIuNjkgNi02cy0yLjY5LTYtNi02LTYgMi42OS02IDYgMi42OSA2IDYgNnptMjQgMGMzLjMxIDAgNi0yLjY5IDYtNnMtMi42OS02LTYtNi02IDIuNjktNiA2IDIuNjkgNiA2IDZ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50"></div>
       </section>
 
+      {/* Categories section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center text-slate-900 mb-12">
@@ -91,6 +95,12 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Best sellers horizontal scroll section */}
+      <BestSellers />
+
+      {/* New in horizontal scroll section */}
+      <NewIn />
+
       <section className="py-16 bg-slate-50">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -109,6 +119,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Call to action section */}
       <section className="py-16 bg-gradient-to-br from-orange-600 to-red-600 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
