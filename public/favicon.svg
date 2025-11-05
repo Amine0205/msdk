@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Favicon: simple store icon in orange, suitable for browser favicon -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <rect width="24" height="24" fill="none"/>
+  <path d="M3 7h18v10a1 1 0 0 1-1 1h-4v-4a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v4H4a1 1 0 0 1-1-1V7z" fill="#f97316"/>
+  <path d="M2 7l1-3h18l1 3" stroke="#f97316" stroke-width="0.5" fill="none"/>
+  <path d="M3 9h18" stroke="#fff" stroke-width="0.8" opacity="0.2"/>
+  <path d="M7 11v6" stroke="#fff" stroke-width="1" opacity="0.9"/>
+  <path d="M12 11v6" stroke="#fff" stroke-width="1" opacity="0.9"/>
+  <path d="M17 11v6" stroke="#fff" stroke-width="1" opacity="0.9"/>
+</svg>

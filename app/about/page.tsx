@@ -93,29 +93,7 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
-
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-slate-900 mb-12 text-center">Our Team</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center">
-            {team.map((member) => (
-              <div key={member.name} className="text-center">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-orange-400 to-red-500 mx-auto mb-4"></div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-1">
-                  {member.name}
-                </h3>
-                <p className="text-sm font-medium text-orange-600 mb-2">
-                  {member.role}
-                </p>
-                <p className="text-sm text-slate-600">
-                  {member.bio}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
+      
       <section className="py-16 bg-gradient-to-br from-orange-600 to-red-600 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
