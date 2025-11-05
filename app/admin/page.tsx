@@ -21,7 +21,11 @@ export default function AdminPage() {
     description: '',
     price: '',
     category: '',
-    image_url: ''
+    image_url: '',
+    is_best_seller: false,
+    is_new: false,
+    total_quantity: '',
+    max_quantity: ''
   });
 
   useEffect(() => {
@@ -67,7 +71,17 @@ export default function AdminPage() {
 
   function openCreate() {
     setEditing(null);
-    setForm({ name: '', description: '', price: '', category: '', image_url: '' });
+    setForm({
+      name: '',
+      description: '',
+      price: '',
+      category: '',
+      image_url: '',
+      is_best_seller: false,
+      is_new: false,
+      total_quantity: '',
+      max_quantity: ''
+    });
     setShowForm(true);
   }
 
@@ -78,7 +92,11 @@ export default function AdminPage() {
       description: p.description || '',
       price: String(p.price),
       category: p.category,
-      image_url: p.image_url || ''
+      image_url: p.image_url || '',
+      is_best_seller: Boolean((p as any).is_best_seller),
+      is_new: Boolean((p as any).is_new),
+      total_quantity: String((p as any).total_quantity ?? (p as any).totalQuantity ?? ''),
+      max_quantity: String((p as any).max_quantity ?? (p as any).maxQuantity ?? '')
     });
     setShowForm(true);
   }
@@ -90,7 +108,11 @@ export default function AdminPage() {
       description: form.description,
       price: parseFloat(form.price) || 0,
       category: form.category,
-      image_url: form.image_url || null
+      image_url: form.image_url || null,
+      is_best_seller: Boolean(form.is_best_seller),
+      is_new: Boolean(form.is_new),
+      total_quantity: form.total_quantity !== '' ? parseInt(form.total_quantity, 10) : 0,
+      max_quantity: form.max_quantity !== '' ? parseInt(form.max_quantity, 10) : 0
     };
 
     try {
@@ -158,6 +180,10 @@ export default function AdminPage() {
                 <th>Name</th>
                 <th>Category</th>
                 <th>Price (MAD)</th>
+                <th>Best</th>
+                <th>New</th>
+                <th>Total</th>
+                <th>Max</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -167,6 +193,10 @@ export default function AdminPage() {
                   <td className="py-3">{p.name}</td>
                   <td>{p.category}</td>
                   <td>{Number(p.price).toFixed(2)}</td>
+                  <td>{(p as any).is_best_seller ? '✓' : '—'}</td>
+                  <td>{(p as any).is_new ? '✓' : '—'}</td>
+                  <td>{Number((p as any).total_quantity ?? 0)}</td>
+                  <td>{Number((p as any).max_quantity ?? 0)}</td>
                   <td className="space-x-2">
                     <Button onClick={() => openEdit(p)} size="sm">Edit</Button>
                     <Button onClick={() => deleteProduct(p.id)} variant="destructive" size="sm">Delete</Button>
@@ -200,6 +230,51 @@ export default function AdminPage() {
               <Input placeholder="Price" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
               <Input placeholder="Image URL" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
               <textarea placeholder="Description" className="w-full border rounded p-2" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={form.is_best_seller}
+                    onChange={(e) => setForm({ ...form, is_best_seller: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <span>Best seller</span>
+                </label>
+
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={form.is_new}
+                    onChange={(e) => setForm({ ...form, is_new: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <span>New</span>
+                </label>
+
+                <div>
+                  <label className="block text-sm text-slate-700 mb-1">Total quantity</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.total_quantity}
+                    onChange={(e) => setForm({ ...form, total_quantity: e.target.value })}
+                    className="w-full border rounded p-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-slate-700 mb-1">Max quantity</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.max_quantity}
+                    onChange={(e) => setForm({ ...form, max_quantity: e.target.value })}
+                    className="w-full border rounded p-2"
+                  />
+                </div>
+              </div>
+
               <div className="flex justify-end space-x-2">
                 <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
                 <Button type="submit">{editing ? 'Update' : 'Create'}</Button>

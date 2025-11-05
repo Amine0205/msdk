@@ -16,8 +16,15 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
 
+  const totalQty = Number((product as any).total_quantity ?? (product as any).totalQuantity ?? -1);
+  const outOfStock = totalQty === 0;
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (outOfStock) {
+      toast.error('Out of stock');
+      return;
+    }
     addToCart(product);
     toast.success(`${product.name} added to cart`);
   };
@@ -32,9 +39,18 @@ export function ProductCard({ product }: ProductCardProps) {
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
+
+          {/* Category badge */}
           <div className="absolute top-2 right-2 bg-orange-600 text-white text-xs font-semibold px-2 py-1 rounded">
             {product.category}
           </div>
+
+          {/* Out of stock badge */}
+          {outOfStock && (
+            <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded">
+              out of stock
+            </div>
+          )}
         </div>
         <CardContent className="p-4">
           <h3 className="font-semibold text-slate-900 mb-1 line-clamp-1">
@@ -50,10 +66,12 @@ export function ProductCard({ product }: ProductCardProps) {
         <CardFooter className="p-4 pt-0">
           <Button
             onClick={handleAddToCart}
-            className="w-full bg-orange-600 hover:bg-orange-700"
+            className={`w-full bg-orange-600 hover:bg-orange-700 ${outOfStock ? 'opacity-50 cursor-not-allowed hover:bg-orange-600' : ''}`}
+            disabled={outOfStock}
+            aria-disabled={outOfStock}
           >
             <ShoppingCart className="h-4 w-4 mr-2" />
-            Add to Cart
+            {outOfStock ? 'Rupture' : 'Add to Cart'}
           </Button>
         </CardFooter>
       </Card>

@@ -6,6 +6,7 @@ export interface Product {
   category: string;
   image_url: string | null;
   created_at: string;
+  max_quantity?: number;
 }
 
 export interface CartItem extends Product {

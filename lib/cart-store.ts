@@ -15,10 +15,28 @@ class CartStore {
     const cart = this.getCart();
     const existingItem = cart.find(item => item.id === product.id);
 
+    // determine max quantity from product fields
+    const max = Number((product as any).max_quantity ?? (product as any).maxQuantity ?? 0) || 0;
+
     if (existingItem) {
-      existingItem.quantity += 1;
+      // try to increment by 1 but respect max
+      const desired = existingItem.quantity + 1;
+      if (max > 0 && desired > max) {
+        existingItem.quantity = max; // cap to max
+      } else {
+        existingItem.quantity = desired;
+      }
     } else {
-      cart.push({ ...product, quantity: 1 });
+      const initialQty = 1;
+      const qty = (max > 0 && initialQty > max) ? max : initialQty;
+      // store max_quantity on item so later updates can enforce it
+      const item: CartItem = {
+        ...product,
+        quantity: qty,
+        // @ts-ignore allow storing max on item
+        max_quantity: max > 0 ? max : undefined
+      } as unknown as CartItem;
+      cart.push(item);
     }
 
     localStorage.setItem('msdk-cart', JSON.stringify(cart));
@@ -37,13 +55,27 @@ class CartStore {
     const item = cart.find(item => item.id === productId);
 
     if (item) {
+      // determine max from stored item or alternate field
+      const max = Number((item as any).max_quantity ?? (item as any).maxQuantity ?? 0) || 0;
+
       if (quantity <= 0) {
         this.removeFromCart(productId);
-      } else {
-        item.quantity = quantity;
-        localStorage.setItem('msdk-cart', JSON.stringify(cart));
-        this.notifyListeners();
+        return;
       }
+
+      let newQty = Math.floor(quantity);
+      if (newQty < 1) newQty = 1;
+
+      if (max > 0 && newQty > max) {
+        newQty = max; // enforce cap
+      }
+
+      // if qty unchanged, do nothing
+      if (item.quantity === newQty) return;
+
+      item.quantity = newQty;
+      localStorage.setItem('msdk-cart', JSON.stringify(cart));
+      this.notifyListeners();
     }
   }
 
