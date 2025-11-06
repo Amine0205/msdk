@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Confirmation de commande</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Roboto, "Helvetica Neue", Arial; color:#111; margin:0; padding:20px; }
+      .container { max-width:800px; margin:0 auto; }
+      h2 { color:#111; }
+      table { width:100%; border-collapse:collapse; margin-top:12px; }
+      th, td { padding:8px; border-bottom:1px solid #eee; vertical-align:middle; }
+      thead tr { background:#f7f7f7; }
+      .img { width:80px; height:auto; border-radius:6px; }
+      .total { text-align:right; margin-top:12px; padding-top:12px; border-top:1px solid #eee; font-weight:700; }
+      .muted { color:#666; font-size:14px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Replace tokens with server-side string replace -->
+      <h2>Merci pour votre commande, {{ORDER_FULL_NAME}}</h2>
+      <p class="muted">Nous avons bien reçu votre commande. Détails ci‑dessous :</p>
+
+      <h3>Produits</h3>
+      <table role="presentation">
+        <thead>
+          <tr>
+            <th style="text-align:left">Image</th>
+            <th style="text-align:left">Produit</th>
+            <th style="width:80px">Qté</th>
+            <th style="width:120px;text-align:right">Prix Unitaire</th>
+            <th style="width:120px;text-align:right">Sous-total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Insert product rows here. Server should replace {{PRODUCT_ROWS}} with one or more rows like the example below. -->
+          {{PRODUCT_ROWS}}
+        </tbody>
+      </table>
+
+      <div class="total">Total: {{ORDER_TOTAL}} MAD</div>
+
+      <p class="muted">Paiement: Paiement à la livraison.</p>
+
+      <p style="margin-top:20px">Cordialement,<br/>L'équipe {{SENDER_NAME}}</p>
+    </div>
+
+    <!-- Example product row (for reference):
+      <tr>
+        <td><img src="{{PRODUCT_IMAGE}}" alt="{{PRODUCT_NAME}}" class="img" /></td>
+        <td>{{PRODUCT_NAME}}</td>
+        <td style="text-align:center">{{PRODUCT_QTY}}</td>
+        <td style="text-align:right">{{PRODUCT_UNIT_PRICE}} MAD</td>
+        <td style="text-align:right">{{PRODUCT_SUBTOTAL}} MAD</td>
+      </tr>
+    -->
+  </body>
+</html>

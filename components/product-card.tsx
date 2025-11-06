@@ -71,7 +71,7 @@ export function ProductCard({ product }: ProductCardProps) {
             aria-disabled={outOfStock}
           >
             <ShoppingCart className="h-4 w-4 mr-2" />
-            {outOfStock ? 'Rupture' : 'Add to Cart'}
+            {outOfStock ? 'Out of Stock' : 'Add to Cart'}
           </Button>
         </CardFooter>
       </Card>

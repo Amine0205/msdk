@@ -1,16 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useCart } from '@/hooks/use-cart';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { CheckCircle2, ShoppingBag } from 'lucide-react';
-import Link from 'next/link';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useCart } from '@/hooks/use-cart';
+import { CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -37,7 +37,6 @@ export default function CheckoutPage() {
     if (!isMounted) return;       // wait for client mount
     if (!cart) return;            // wait until cart is defined by useCart
     if (cart.length === 0) {
-      console.log('Checkout blocked — empty cart, redirecting to /products');
       router.push('/products');
     }
   }, [cart, router, isMounted]);

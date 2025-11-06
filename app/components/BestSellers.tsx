@@ -7,7 +7,21 @@ export default function BestSellers() {
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
-    const pageSize = 4; // show 4 cards per slide
+    const [pageSize, setPageSize] = useState(4); // now responsive
+
+    useEffect(() => {
+        // responsive page size: mobile=1, small=2, md+ =4
+        function updatePageSize() {
+            if (typeof window === 'undefined') return;
+            const w = window.innerWidth;
+            if (w < 640) setPageSize(1);
+            else if (w < 768) setPageSize(2);
+            else setPageSize(4);
+        }
+        updatePageSize();
+        window.addEventListener('resize', updatePageSize);
+        return () => window.removeEventListener('resize', updatePageSize);
+    }, []);
 
     useEffect(() => {
         let mounted = true;
@@ -33,6 +47,12 @@ export default function BestSellers() {
         };
     }, []);
 
+    // adjust current page if pageSize / products change
+    const pages = Math.max(1, Math.ceil(products.length / pageSize));
+    useEffect(() => {
+        setPage((p) => Math.min(p, pages - 1));
+    }, [pages]);
+
     if (loading) return (
         <section className="py-8">
             <div className="container mx-auto px-4">
@@ -49,8 +69,6 @@ export default function BestSellers() {
     );
 
     if (!products.length) return null;
-
-    const pages = Math.max(1, Math.ceil(products.length / pageSize));
 
     function prev() {
         setPage((s) => (s - 1 + pages) % pages);

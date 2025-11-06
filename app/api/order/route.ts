@@ -2,163 +2,134 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SERVICE_KEY:any = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+const SMTP_HOST = process.env.SMTP_HOST ?? 'smtp.gmail.com';
+const SMTP_PORT = process.env.SMTP_PORT ?? process.env.GMAIL_SMTP_PORT ?? '587';
+const SMTP_USER = process.env.SMTP_USER ?? process.env.GMAIL_USER;
+const SMTP_PASS = process.env.SMTP_PASS ?? process.env.GMAIL_PASS;
+const SENDER_EMAIL = process.env.SENDER_EMAIL ?? SMTP_USER;
+const SENDER_NAME = process.env.SENDER_NAME ?? 'MSDK';
+
+function buildOrderHtml(order: any) {
+  const products = order.products ?? [];
+  const rows = products
+    .map((p: any) => {
+      const img = p.image_url
+        ? `<td style="padding:8px"><img src="${p.image_url}" alt="${escapeHtml(p.name)}" style="width:80px;height:auto;border-radius:6px" /></td>`
+        : `<td style="padding:8px">-</td>`;
+      const name = `<td style="padding:8px;vertical-align:middle">${escapeHtml(p.name || '')}</td>`;
+      const qty = `<td style="padding:8px;vertical-align:middle;text-align:center">${Number(p.quantity ?? 0)}</td>`;
+      const unit = `<td style="padding:8px;vertical-align:middle;text-align:right">${Number(p.price ?? 0).toFixed(2)} MAD</td>`;
+      const subtotal = `<td style="padding:8px;vertical-align:middle;text-align:right">${((Number(p.price ?? 0) || 0) * (Number(p.quantity ?? 0) || 0)).toFixed(2)} MAD</td>`;
+      return `<tr>${img}${name}${qty}${unit}${subtotal}</tr>`;
+    })
+    .join('');
+
+  const total = Number(order.total ?? 0).toFixed(2);
+
+  return `
+    <div style="font-family:system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial; color:#111">
+      <h2>Merci pour votre commande, ${escapeHtml(order.full_name || 'Client')}</h2>
+      <p>Nous avons bien reçu votre commande. Détails ci‑dessous :</p>
+
+      <h3>Produits</h3>
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:#f7f7f7">
+            <th style="padding:8px;text-align:left">Image</th>
+            <th style="padding:8px;text-align:left">Produit</th>
+            <th style="padding:8px;width:80px">Qté</th>
+            <th style="padding:8px;width:120px;text-align:right">Prix Unitaire</th>
+            <th style="padding:8px;width:120px;text-align:right">Sous-total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+
+      <div style="margin-top:12px;padding:12px;border-top:1px solid #eee;text-align:right">
+        <strong>Total: ${total} MAD</strong>
+      </div>
+
+      <p style="color:#666;margin-top:10px">Paiement: Paiement à la livraison.</p>
+
+      <p style="margin-top:20px">Cordialement,<br/>L'équipe ${escapeHtml(SENDER_NAME)}</p>
+    </div>
+  `;
+}
+
+function escapeHtml(s: any) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export async function POST(req: Request) {
-  // move server-only client creation inside the handler and validate env
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // server-only
-  if (!url || !serviceKey) {
-    console.error('Missing Supabase server env vars', { url: !!url, serviceKey: !!serviceKey });
-    return NextResponse.json({ success: false, error: 'Server misconfiguration' }, { status: 500 });
-  }
-
-  const supabaseAdmin = createClient(url, serviceKey, {
-    auth: { persistSession: false },
-  });
-
-  const adminEmail = process.env.ADMIN_EMAIL;
-  const adminEmailPass = process.env.ADMIN_EMAIL_PASSWORD;
-  if (!adminEmail || !adminEmailPass) {
-    console.error('Missing admin email env vars', { adminEmail: !!adminEmail, adminEmailPass: !!adminEmailPass });
-    return NextResponse.json({ success: false, error: 'Email not configured' }, { status: 500 });
-  }
-
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: adminEmail,
-      pass: adminEmailPass,
-    },
-  });
-
   try {
-    const data = await req.json();
-    const { full_name, phone, email, address, city, notes, products, total } = data;
+    const body = await req.json();
+    const { full_name, phone, email, address, city, notes, products, total } = body ?? {};
 
-    if (!full_name || !phone || !address || !city || !products || !total) {
-      return NextResponse.json(
-        { success: false, error: 'Missing required fields' },
-        { status: 400 }
-      );
+    // minimal validation
+    if (!full_name || !phone || !address || !city || !Array.isArray(products) || products.length === 0) {
+      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    const { data: orderData, error: orderError } = await supabaseAdmin
-      .from('orders')
-      .insert([
-        {
-          full_name,
-          phone,
-          email: email || null,
-          address,
-          city,
-          notes: notes || null,
-          products,
-          total,
-        },
-      ])
-      .select()
-      .single();
+    const supabase = createClient(SUPABASE_URL!, SERVICE_KEY || ANON_KEY);
 
-    if (orderError) {
-      console.error('Database error:', orderError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to save order' },
-        { status: 500 }
-      );
+    const orderRow = { full_name, phone, email: email ?? null, address, city, notes: notes ?? null, products, total: Number(total ?? 0) };
+
+    const { data, error } = await supabase.from('orders').insert(orderRow).select('*').maybeSingle();
+    if (error) return NextResponse.json({ success: false, error: error.message ?? 'Failed to create order' }, { status: 500 });
+
+    if (SMTP_USER && SMTP_PASS) {
+    } else {
     }
 
-    try {
-      const productsHtml = products
-        .map(
-          (p: any) =>
-            `<tr>
-              <td style="padding: 8px; border: 1px solid #ddd;">${p.name}</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${p.quantity}</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${p.price.toFixed(2)} MAD</td>
-              <td style="padding: 8px; border: 1px solid #ddd;">${(p.price * p.quantity).toFixed(2)} MAD</td>
-            </tr>`
-        )
-        .join('');
+    // default emailStatus when no SMTP config or no recipient
+    let emailStatus = { sent: false, info: null as any, error: null as any };
 
-      await transporter.sendMail({
-        from: process.env.ADMIN_EMAIL,
-        to: process.env.ADMIN_EMAIL,
-        subject: `New Order from ${full_name} - MSDK E-commerce`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #ea580c; border-bottom: 2px solid #ea580c; padding-bottom: 10px;">
-              New Order Received
-            </h2>
-
-            <h3 style="color: #334155; margin-top: 20px;">Customer Information</h3>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-              <tr>
-                <td style="padding: 8px; background-color: #f1f5f9;"><strong>Name:</strong></td>
-                <td style="padding: 8px;">${full_name}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px; background-color: #f1f5f9;"><strong>Phone:</strong></td>
-                <td style="padding: 8px;">${phone}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px; background-color: #f1f5f9;"><strong>Email:</strong></td>
-                <td style="padding: 8px;">${email || 'Not provided'}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px; background-color: #f1f5f9;"><strong>Address:</strong></td>
-                <td style="padding: 8px;">${address}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px; background-color: #f1f5f9;"><strong>City:</strong></td>
-                <td style="padding: 8px;">${city}</td>
-              </tr>
-              ${notes ? `<tr>
-                <td style="padding: 8px; background-color: #f1f5f9;"><strong>Notes:</strong></td>
-                <td style="padding: 8px;">${notes}</td>
-              </tr>` : ''}
-            </table>
-
-            <h3 style="color: #334155; margin-top: 20px;">Order Details</h3>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-              <thead>
-                <tr style="background-color: #ea580c; color: white;">
-                  <th style="padding: 10px; text-align: left;">Product</th>
-                  <th style="padding: 10px; text-align: center;">Quantity</th>
-                  <th style="padding: 10px; text-align: right;">Price</th>
-                  <th style="padding: 10px; text-align: right;">Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${productsHtml}
-              </tbody>
-              <tfoot>
-                <tr style="background-color: #f1f5f9; font-weight: bold;">
-                  <td colspan="3" style="padding: 10px; text-align: right;">Total:</td>
-                  <td style="padding: 10px; text-align: right; color: #ea580c;">${total.toFixed(2)} MAD</td>
-                </tr>
-              </tfoot>
-            </table>
-
-            <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin-top: 20px;">
-              <strong>Payment Method:</strong> Cash on Delivery
-            </div>
-
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px;">
-              <p>Order ID: ${orderData.id}</p>
-              <p>Date: ${new Date().toLocaleString()}</p>
-            </div>
-          </div>
-        `,
+    if (SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && email) {
+      const transporter = nodemailer.createTransport({
+        host: SMTP_HOST,
+        port: Number(SMTP_PORT),
+        secure: Number(SMTP_PORT) === 465,
+        auth: { user: SMTP_USER, pass: SMTP_PASS },
       });
-    } catch (emailError) {
-      console.error('Email error:', emailError);
+
+      try {
+        // verify connection
+        await transporter.verify();
+
+        const html = buildOrderHtml(orderRow);
+        const text = `Merci ${full_name}, votre commande a été reçue. Total: ${Number(total ?? 0).toFixed(2)} MAD`;
+
+        const info = await transporter.sendMail({
+          from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
+          to: email,
+          subject: 'Confirmation de commande — MSDK',
+          text,
+          html,
+        });
+
+        emailStatus = { sent: true, info: { accepted: info.accepted, rejected: info.rejected, response: info.response }, error: null };
+
+        if (typeof transporter.close === 'function') transporter.close();
+      } catch (sendErr: any) {
+        emailStatus = { sent: false, info: null, error: String(sendErr?.message ?? sendErr) };
+      }
     }
 
-    return NextResponse.json({ success: true, orderId: orderData.id });
-  } catch (error) {
-    console.error('Order processing error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to process order' },
-      { status: 500 }
-    );
+    // return order + emailStatus so client can wait/inspect before redirect
+    return NextResponse.json({ success: true, order: data, emailStatus });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err?.message ?? 'Unknown error' }, { status: 500 });
   }
 }
