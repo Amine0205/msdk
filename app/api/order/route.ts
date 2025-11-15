@@ -1,9 +1,12 @@
+// filepath: d:\folders\amine 2\msdk\app\api\order\route.ts
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_KEY:any = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SERVICE_KEY: any = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 const SMTP_HOST = process.env.SMTP_HOST ?? 'smtp.gmail.com';
@@ -13,54 +16,8 @@ const SMTP_PASS = process.env.SMTP_PASS ?? process.env.GMAIL_PASS;
 const SENDER_EMAIL = process.env.SENDER_EMAIL ?? SMTP_USER;
 const SENDER_NAME = process.env.SENDER_NAME ?? 'MSDK';
 
-function buildOrderHtml(order: any) {
-  const products = order.products ?? [];
-  const rows = products
-    .map((p: any) => {
-      const img = p.image_url
-        ? `<td style="padding:8px"><img src="${p.image_url}" alt="${escapeHtml(p.name)}" style="width:80px;height:auto;border-radius:6px" /></td>`
-        : `<td style="padding:8px">-</td>`;
-      const name = `<td style="padding:8px;vertical-align:middle">${escapeHtml(p.name || '')}</td>`;
-      const qty = `<td style="padding:8px;vertical-align:middle;text-align:center">${Number(p.quantity ?? 0)}</td>`;
-      const unit = `<td style="padding:8px;vertical-align:middle;text-align:right">${Number(p.price ?? 0).toFixed(2)} MAD</td>`;
-      const subtotal = `<td style="padding:8px;vertical-align:middle;text-align:right">${((Number(p.price ?? 0) || 0) * (Number(p.quantity ?? 0) || 0)).toFixed(2)} MAD</td>`;
-      return `<tr>${img}${name}${qty}${unit}${subtotal}</tr>`;
-    })
-    .join('');
-
-  const total = Number(order.total ?? 0).toFixed(2);
-
-  return `
-    <div style="font-family:system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial; color:#111">
-      <h2>Merci pour votre commande, ${escapeHtml(order.full_name || 'Client')}</h2>
-      <p>Nous avons bien reçu votre commande. Détails ci‑dessous :</p>
-
-      <h3>Produits</h3>
-      <table style="width:100%;border-collapse:collapse">
-        <thead>
-          <tr style="background:#f7f7f7">
-            <th style="padding:8px;text-align:left">Image</th>
-            <th style="padding:8px;text-align:left">Produit</th>
-            <th style="padding:8px;width:80px">Qté</th>
-            <th style="padding:8px;width:120px;text-align:right">Prix Unitaire</th>
-            <th style="padding:8px;width:120px;text-align:right">Sous-total</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows}
-        </tbody>
-      </table>
-
-      <div style="margin-top:12px;padding:12px;border-top:1px solid #eee;text-align:right">
-        <strong>Total: ${total} MAD</strong>
-      </div>
-
-      <p style="color:#666;margin-top:10px">Paiement: Paiement à la livraison.</p>
-
-      <p style="margin-top:20px">Cordialement,<br/>L'équipe ${escapeHtml(SENDER_NAME)}</p>
-    </div>
-  `;
-}
+const TEMPLATE_PATH = path.join(process.cwd(), 'app', 'api', 'order', 'email-template.html');
+let cachedTemplate: string | null = null;
 
 function escapeHtml(s: any) {
   if (s === null || s === undefined) return '';
@@ -70,6 +27,46 @@ function escapeHtml(s: any) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+async function loadTemplate(): Promise<string> {
+  if (cachedTemplate) return cachedTemplate;
+  const txt = await fs.promises.readFile(TEMPLATE_PATH, 'utf-8');
+  cachedTemplate = txt;
+  return txt;
+}
+
+function buildProductRows(order: any) {
+  const products = order.products ?? [];
+  return products
+    .map((p: any) => {
+      const imgCell = p.image_url
+        ? `<td style="padding:8px"><img src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" style="width:80px;height:auto;border-radius:6px" /></td>`
+        : `<td style="padding:8px">-</td>`;
+      const nameCell = `<td style="padding:8px;vertical-align:middle">${escapeHtml(p.name || '')}</td>`;
+      const qtyCell = `<td style="padding:8px;vertical-align:middle;text-align:center">${Number(p.quantity ?? 0)}</td>`;
+      const unitCell = `<td style="padding:8px;vertical-align:middle;text-align:right">${Number(p.price ?? 0).toFixed(2)} MAD</td>`;
+      const subtotal = ((Number(p.price ?? 0) || 0) * (Number(p.quantity ?? 0) || 0)).toFixed(2);
+      const subtotalCell = `<td style="padding:8px;vertical-align:middle;text-align:right">${subtotal} MAD</td>`;
+      return `<tr>${imgCell}${nameCell}${qtyCell}${unitCell}${subtotalCell}</tr>`;
+    })
+    .join('');
+}
+
+async function renderTemplate(order: any, senderName = 'MSDK') {
+  const tpl = await loadTemplate();
+  const productRows = buildProductRows(order);
+  const total = Number(order.total ?? 0).toFixed(2);
+
+  return tpl
+    .replace(/{{ORDER_FULL_NAME}}/g, escapeHtml(order.full_name ?? ''))
+    .replace(/{{ORDER_PHONE}}/g, escapeHtml(order.phone ?? ''))
+    .replace(/{{ORDER_EMAIL}}/g, escapeHtml(order.email ?? ''))
+    .replace(/{{ORDER_ADDRESS}}/g, escapeHtml(order.address ?? ''))
+    .replace(/{{ORDER_CITY}}/g, escapeHtml(order.city ?? ''))
+    .replace(/{{ORDER_TOTAL}}/g, `${total}`)
+    .replace(/{{SENDER_NAME}}/g, escapeHtml(senderName))
+    .replace(/{{PRODUCT_ROWS}}/g, productRows);
 }
 
 export async function POST(req: Request) {
@@ -89,10 +86,6 @@ export async function POST(req: Request) {
     const { data, error } = await supabase.from('orders').insert(orderRow).select('*').maybeSingle();
     if (error) return NextResponse.json({ success: false, error: error.message ?? 'Failed to create order' }, { status: 500 });
 
-    if (SMTP_USER && SMTP_PASS) {
-    } else {
-    }
-
     // default emailStatus when no SMTP config or no recipient
     let emailStatus = { sent: false, info: null as any, error: null as any };
 
@@ -105,10 +98,8 @@ export async function POST(req: Request) {
       });
 
       try {
-        // verify connection
         await transporter.verify();
-
-        const html = buildOrderHtml(orderRow);
+        const html = await renderTemplate(orderRow, SENDER_NAME);
         const text = `Merci ${full_name}, votre commande a été reçue. Total: ${Number(total ?? 0).toFixed(2)} MAD`;
 
         const info = await transporter.sendMail({
@@ -127,7 +118,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // return order + emailStatus so client can wait/inspect before redirect
     return NextResponse.json({ success: true, order: data, emailStatus });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err?.message ?? 'Unknown error' }, { status: 500 });

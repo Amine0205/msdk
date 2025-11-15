@@ -3,6 +3,7 @@ import { ArrowRight, Package, ShieldCheck, Truck } from 'lucide-react';
 import Link from 'next/link';
 import BestSellers from './components/BestSellers';
 import NewIn from './components/NewIn';
+import ChatWidget from './components/ChatWidget';
 
 export default async function Home() {
   const categories = [
@@ -136,6 +137,7 @@ export default async function Home() {
           </Link>
         </div>
       </section>
+      <ChatWidget />
     </div>
   );
 }

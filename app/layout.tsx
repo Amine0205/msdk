@@ -22,9 +22,9 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <link rel="icon" href="/favicon.svg" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/favicon.svg" />
-        <link rel="mask-icon" href="/favicon.svg" color="#f97316" />
+        <link rel="icon" href="/logo-website.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/logo-website.png" />
+        <link rel="mask-icon" href="/logo-website.png" color="#f97316" />
         <meta name="theme-color" content="#ffffff" />
         <title>MSDK - Boutique Marocaine en ligne | Mode, Maison & Artisanat</title>
         <meta name="description" content="Découvrez MSDK : accessoires de mode, gadgets tech, déco maison et produits artisanaux marocains. Livraison rapide, paiement à la livraison." />
